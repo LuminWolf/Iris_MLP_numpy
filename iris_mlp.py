@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from mlp import nn, metrics
+from MultiLayerPerceptron import nn, metrics
 
 
 def load_data(data_filepath):
