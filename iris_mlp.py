@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-import mlp.nn
-import mlp.metrics
+
+from mlp import nn, metrics
 
 
 def load_data(data_filepath):
@@ -33,6 +33,26 @@ def decoder(predicted, label_meaning):
     return result[1:]
 
 
+def accuracy(model, feature, label_meaning, raw_data):
+    predicted = decoder(model.predict(feature), label_meaning)[:, 0]
+    predict_zip = list(zip(predicted, raw_data[:, 4]))
+    t = 0
+    f = 0
+    for z in predict_zip:
+        if z[0] != z[1]:
+            f += 1
+        elif z[0] == z[1]:
+            t += 1
+    acc = t / (t + f)
+    print('accuracy: ', acc)
+
+
+def learn(model, params_filepath, data_train, data_val, batch_size):
+    nn.load(model, params_filepath)
+    model.learn(data_train, data_val, batch_size, 500)
+    nn.save_model(model, params_filepath)
+
+
 def main():
     feature_size = 4  # 特征数量
     hidden_size = 5  # 隐含层神经元数量
@@ -42,20 +62,16 @@ def main():
     label_meaning = ['setosa', 'versicolor', 'virginica']
     data_filepath = './DataSets/iris.csv'
     params_filepath = './CheckPoints/iris_params.csv'
+    iris_model = nn.TwoLayerNet(feature_size, hidden_size, label_size)
 
     iris_data = load_data(data_filepath)
-    main_data = mlp.nn.DataSet(data_preprocess(iris_data))
+    main_data = nn.DataSet(data_preprocess(iris_data))
 
-    iris_model = mlp.nn.TwoLayerNet(feature_size, hidden_size, label_size)
+    feature_1, label_1 = nn.DataLoader(main_data, batch_size).load(feature_size, label_size)
     data_train, data_val = main_data.split()
+    # learn(iris_model, params_filepath, data_train, data_val, batch_size)
 
-    mlp.nn.load(iris_model, params_filepath)
-    iris_model.learn(data_train, data_val, batch_size, 5)
-    mlp.nn.save_model(iris_model, params_filepath)
-
-    feature_1, label_1 = mlp.nn.DataLoader(main_data, batch_size).load(feature_size, label_size)
-    predicted = decoder(iris_model.predict(feature_1), label_meaning)[:, 0]
-    print(list(zip(predicted, iris_data[:, 4])))
+    accuracy(iris_model, feature_1, label_meaning, iris_data)
 
 
 if __name__ == '__main__':
